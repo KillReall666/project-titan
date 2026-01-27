@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"titan/pkg/logger"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/zipkin"   // Zipkin exporter
@@ -39,7 +40,7 @@ func InitTracing() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := tp.Shutdown(ctx); err != nil {
-			Logger.Error("Tracer shutdown error", "err", err)
+			logger.Logger.Error("Tracer shutdown error", "err", err)
 		}
 	}()
 

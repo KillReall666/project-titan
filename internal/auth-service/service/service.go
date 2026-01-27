@@ -1,37 +1,59 @@
 package service
 
 import (
-	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
-	"net/http"
+	"context"
+	"errors"
+	"time"
+
+	"titan/internal/auth-service/config"
 	"titan/internal/auth-service/model"
+	"titan/internal/auth-service/storage"
+	"titan/pkg/logger"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-type authorizationService struct {
-	cfg ?
-	db 
+type authService struct {
+	cfg config.Config
+	db  storage.AuthRepository
+}
+
+func NewAuthService(cfg config.Config, db storage.AuthRepository) *authService {
+	return &authService{
+		cfg: cfg,
+		db:  db,
+	}
 }
 
 // HashPassword — bcrypt hash
-func (a *authorizationService) HashPassword(password string) (string, error) {
+func (a *authService) HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }
 
 // CheckPassword - verify pass
-func (a *authorizationService) CheckPassword(password, hash string) bool {
+func (a *authService) CheckPassword(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
-// RegisterHandler - POST /register
-func RegisterHandler(c *gin.Context) {
-	var req model.RegisterRequest
-
-	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+func (a *authService) SetUser(ctx context.Context, user model.RegisterRequest) error {
+	hash, err := a.HashPassword(user.Password)
+	if err != nil {
+		logger.Logger.Error("err hash password", err)
+		return errors.New("auth service error") //Пока такая заглушка, подумать что отдавать пользователю.
 	}
 
-	hash, err := a.HashPassword(req.Password)
+	newUser := model.User{
+		UserName:     user.Username,
+		PasswordHash: hash,
+		CreatedAt:    time.Now(),
+	}
+
+	err = a.db.SetUser(ctx, newUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
