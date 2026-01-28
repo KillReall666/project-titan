@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/google/uuid"
 	"time"
 
 	"titan/internal/auth-service/config"
@@ -45,6 +46,7 @@ func (a *authService) SetUser(ctx context.Context, user model.RegisterRequest) e
 	}
 
 	newUser := model.User{
+		ID:           uuid.New().String(),
 		UserName:     user.Username,
 		PasswordHash: hash,
 		CreatedAt:    time.Now(),

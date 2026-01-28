@@ -21,7 +21,7 @@ const createPublicationTableQuery = `
 	id UUID PRIMARY KEY,
     user_name VARCHAR NOT NULL,
     pass_hash VARCHAR NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT NOW()
 );`
 
 func New(ctx context.Context, connString string) (*Database, error) {
@@ -39,9 +39,9 @@ func New(ctx context.Context, connString string) (*Database, error) {
 }
 
 func (d *Database) SetUser(ctx context.Context, user model.User) error {
-	createQuery := `INSERT INTO users (user_name, password_hash, created_at) VALUES ($1, $2, $3)`
+	createQuery := `INSERT INTO users (id, user_name, pass_hash, created_at) VALUES ($1, $2, $3, $4)`
 
-	_, err := d.db.Exec(ctx, createQuery, user.UserName, user.PasswordHash, user.CreatedAt)
+	_, err := d.db.Exec(ctx, createQuery, user.ID, user.UserName, user.PasswordHash, user.CreatedAt)
 	if err != nil {
 		return err
 	}

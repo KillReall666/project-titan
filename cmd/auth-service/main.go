@@ -1,4 +1,4 @@
-package auth_service
+package main
 
 import (
 	"context"
@@ -39,14 +39,14 @@ func main() {
 
 	srv := &http.Server{
 		Handler:      r,
-		Addr:         "localhost:8080",
+		Addr:         ":1489",
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
 
 	go common.GracefulShutdown(ctx, srv)
 
-	logger.Logger.Info("Auth service starting on localhost, port 8080")
+	logger.Logger.Info("Auth service starting on localhost, port 1489")
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logger.Logger.Error("server is down")
 		panic(err)

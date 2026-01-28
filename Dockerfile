@@ -1,5 +1,5 @@
 # ---------- build stage ----------
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24.7-alpine AS builder
 
 WORKDIR /app
 
@@ -11,19 +11,18 @@ RUN go mod download
 COPY . .
 
 # сборка
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -trimpath -ldflags="-s -w" -o auth ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+    go build -trimpath -ldflags="-s -w" -o titan-auth ./cmd/auth-service && chmod +x titan-auth
 
 # ---------- runtime stage ----------
 FROM gcr.io/distroless/base-debian12
 
 WORKDIR /app
 
-COPY --from=builder /app/auth /app/auth
+COPY --from=builder /app/titan-auth /app/titan-auth
 
-EXPOSE 8080
+EXPOSE 1489
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/app/auth"]
- 
+ENTRYPOINT ["/app/titan-auth"]
