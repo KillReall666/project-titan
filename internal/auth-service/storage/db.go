@@ -11,6 +11,7 @@ import (
 
 type AuthRepository interface {
 	SetUser(ctx context.Context, user model.User) error
+	GetUser(ctx context.Context, email string) (model.User, error)
 }
 type Database struct {
 	db *pgxpool.Pool
@@ -19,7 +20,7 @@ type Database struct {
 const createPublicationTableQuery = `
       CREATE TABLE IF NOT EXISTS users (
 	id UUID PRIMARY KEY,
-    user_name VARCHAR NOT NULL,
+    email VARCHAR NOT NULL,
     pass_hash VARCHAR NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );`
@@ -38,13 +39,27 @@ func New(ctx context.Context, connString string) (*Database, error) {
 	return &Database{db: conn}, nil
 }
 
+// SetUser Пока один метод - можно оставить так, но как только начнёт разрастаться, разбить на репозитории.
 func (d *Database) SetUser(ctx context.Context, user model.User) error {
-	createQuery := `INSERT INTO users (id, user_name, pass_hash, created_at) VALUES ($1, $2, $3, $4)`
+	createQuery := `INSERT INTO users (id, email, pass_hash, created_at) VALUES ($1, $2, $3, $4)`
 
-	_, err := d.db.Exec(ctx, createQuery, user.ID, user.UserName, user.PasswordHash, user.CreatedAt)
+	_, err := d.db.Exec(ctx, createQuery, user.ID, user.Email, user.PasswordHash, user.CreatedAt)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (d *Database) GetUser(ctx context.Context, email string) (model.User, error) {
+	var user model.User
+
+	getQuery := `SELECT id, email, pass_hash FROM users WHERE email = $1`
+
+	err := d.db.QueryRow(ctx, getQuery, email).Scan(&user.ID, &user.Email, &user.PasswordHash)
+	if err != nil {
+		return model.User{}, fmt.Errorf("err when get user: %v", err)
+	}
+
+	return user, nil
 }

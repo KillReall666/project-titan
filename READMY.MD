@@ -111,3 +111,6 @@ App: requests_total, latency_histogram, errors_total, packets_per_second.
 
 Zipkin: UI localhost:9411 — traces по service-name.
 Logging: slog JSON в stdout (уровни info/error, trace_id).
+
+Убить контейнер и volume БД: docker compose down -v
+Собрать контейнер:  docker compose up --build

@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"titan/internal/auth-service/handlers/login"
+
 	"net/http"
 	"time"
+
+	jwtM "titan/internal/auth-service/jwt"
 
 	"titan/internal/auth-service/config"
 	"titan/internal/auth-service/handlers/register"
@@ -30,12 +34,17 @@ func main() {
 		panic(err)
 	}
 
-	serv := service.NewAuthService(*cfg, db)
+	//Инициализация сервиса JWT
+	jwt := jwtM.NewJWTManager(cfg.JWT.Secret, cfg.JWT.AccessTLL, cfg.JWT.RefreshTLL, cfg.JWT.Issuer)
+
+	//Инициализация сервиса
+	serv := service.NewAuthService(*cfg, db, *jwt)
 
 	r := gin.New()
 	r.Use(gin.Recovery())
 
-	r.POST("/login", register.NewRegistrationHandler(serv).RegistrationHandler)
+	r.POST("/registration", register.NewRegistrationHandler(serv).RegistrationHandler)
+	r.POST("login", login.NewLoginHandler(serv).LoginHandler)
 
 	srv := &http.Server{
 		Handler:      r,

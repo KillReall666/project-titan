@@ -18,15 +18,13 @@ type registrationHandler struct {
 }
 
 func NewRegistrationHandler(register registrator) *registrationHandler {
-	return &registrationHandler{
-		registrator: register,
-	}
+	return &registrationHandler{registrator: register}
 }
 
-// RegistrationHandler - POST /register
+// RegistrationHandler - POST /sign up
 func (r *registrationHandler) RegistrationHandler(c *gin.Context) {
 	var req model.RegisterRequest
-
+	//TODO: можно еще добавить валидации на емейл так как стандартная по полям JSON-ки работает так себе.
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

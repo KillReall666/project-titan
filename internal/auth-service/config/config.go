@@ -3,13 +3,21 @@ package config
 import (
 	"errors"
 	"flag"
-
 	"github.com/caarlos0/env/v11"
+	"time"
 )
 
 type Config struct {
 	Address string `env:"RUN_ADDRESS"`
 	ConnStr string `env:"DATABASE_URL"`
+	JWT     JWT
+}
+
+type JWT struct {
+	Secret     string        `env:"SECRET_KEY"`
+	AccessTLL  time.Duration `env:"ACCESS_TOKEN_TTL"`
+	RefreshTLL time.Duration `env:"REFRESH_TOKEN_TTL"`
+	Issuer     string        `env:"ISSUER_AUTH_SERVICE"`
 }
 
 const (

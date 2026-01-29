@@ -8,18 +8,19 @@ import (
 
 type User struct {
 	ID           string    `json:"id"`
-	UserName     string    `json:"username"`
+	Email        string    `json:"email"`
 	PasswordHash string    `json:"-"`
 	CreatedAt    time.Time `json:"createdAt"`
+	Password     string    `json:"password"`
 }
 
 type RegisterRequest struct {
-	Username string `json:"username" binding:"required"`
+	UserMail string `json:"user_mail" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
+	UserMail string `json:"user_mail" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 

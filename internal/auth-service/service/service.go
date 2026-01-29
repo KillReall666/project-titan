@@ -3,26 +3,29 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"time"
 
 	"titan/internal/auth-service/config"
+	"titan/internal/auth-service/jwt"
 	"titan/internal/auth-service/model"
 	"titan/internal/auth-service/storage"
 	"titan/pkg/logger"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type authService struct {
-	cfg config.Config
-	db  storage.AuthRepository
+	cfg        config.Config
+	db         storage.AuthRepository
+	jwtManager jwt.JWTManager
 }
 
-func NewAuthService(cfg config.Config, db storage.AuthRepository) *authService {
+func NewAuthService(cfg config.Config, db storage.AuthRepository, jwt jwt.JWTManager) *authService {
 	return &authService{
-		cfg: cfg,
-		db:  db,
+		cfg:        cfg,
+		db:         db,
+		jwtManager: jwt,
 	}
 }
 
@@ -47,7 +50,7 @@ func (a *authService) SetUser(ctx context.Context, user model.RegisterRequest) e
 
 	newUser := model.User{
 		ID:           uuid.New().String(),
-		UserName:     user.Username,
+		Email:        user.UserMail,
 		PasswordHash: hash,
 		CreatedAt:    time.Now(),
 	}
@@ -56,6 +59,25 @@ func (a *authService) SetUser(ctx context.Context, user model.RegisterRequest) e
 	if err != nil {
 		return err
 	}
+	logger.Logger.Info("new user set success")
 
 	return nil
+}
+
+func (a *authService) GetUser(ctx context.Context, username model.LoginRequest) (string, error) {
+	user, err := a.db.GetUser(ctx, username.UserMail)
+	if err != nil {
+		return "", err //подумать над ошибкой
+	}
+
+	if !a.CheckPassword(username.Password, user.PasswordHash) {
+		return "", errors.New("invalid username or password")
+	}
+
+	accessToken, err := a.jwtManager.GenerateToken(user.ID, user.Email)
+	if err != nil {
+		return "", err
+	}
+
+	return accessToken, nil
 }

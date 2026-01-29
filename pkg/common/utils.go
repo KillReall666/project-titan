@@ -20,4 +20,6 @@ func GracefulShutdown(ctx context.Context, srv *http.Server) {
 	if err != nil {
 		logger.Logger.Error("server shutdown failed with error: %v", err)
 	}
+
+	logger.Logger.Info("bye bye, server shutdown success ^_^")
 }
