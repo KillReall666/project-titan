@@ -34,10 +34,10 @@ func main() {
 	}
 
 	//Инициализация сервиса JWT
-	jwt := jwtM.NewJWTManager(cfg)
+	jwt := jwtM.New(cfg)
 
 	//Инициализация сервиса
-	serv := service.NewAuthService(*cfg, db, *jwt)
+	serv := service.New(*cfg, db, *jwt)
 
 	r := gin.New()
 	r.Use(gin.Recovery())

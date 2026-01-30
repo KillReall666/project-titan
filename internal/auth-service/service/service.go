@@ -23,7 +23,7 @@ type authService struct {
 	jwtManager jwt.JWTManager
 }
 
-func NewAuthService(cfg config.Config, db storage.AuthRepository, jwt jwt.JWTManager) *authService {
+func New(cfg config.Config, db storage.AuthRepository, jwt jwt.JWTManager) *authService {
 	return &authService{
 		cfg:        cfg,
 		db:         db,

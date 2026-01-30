@@ -24,7 +24,7 @@ type JWTManager struct {
 	cfg        *config.Config
 }
 
-func NewJWTManager(
+func New(
 	cfg *config.Config) *JWTManager {
 	return &JWTManager{
 		secret:    []byte(cfg.JWT.Secret),
