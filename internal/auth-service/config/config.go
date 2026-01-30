@@ -21,12 +21,18 @@ type JWT struct {
 }
 
 const (
-	defaultServer = "localhost:8080"
+	defaultServer  = "localhost:8080"
+	JWTSecretKey   = "secret-for-signing-key"
+	accessTokenTTL = time.Minute * 60
 )
 
 func New() (*Config, error) {
 	cfg := &Config{
 		Address: defaultServer,
+		JWT: JWT{
+			Secret:    JWTSecretKey,
+			AccessTLL: accessTokenTTL,
+		},
 	}
 
 	flag.StringVar(&cfg.Address, "a", cfg.Address, "server address [host:port]")

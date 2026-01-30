@@ -1,7 +1,11 @@
 package jwt
 
 import (
+	"fmt"
 	"time"
+
+	"titan/common/logger"
+	"titan/internal/auth-service/config"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -17,14 +21,16 @@ type JWTManager struct {
 	accessTTL  time.Duration
 	refreshTTL time.Duration
 	issuer     string
+	cfg        *config.Config
 }
 
-func NewJWTManager(secret string, accessTTL, refreshTTL time.Duration, issuer string) *JWTManager {
+func NewJWTManager(
+	cfg *config.Config) *JWTManager {
 	return &JWTManager{
-		secret:     []byte(secret),
-		accessTTL:  accessTTL,
-		refreshTTL: refreshTTL,
-		issuer:     issuer,
+		secret:    []byte(cfg.JWT.Secret),
+		accessTTL: cfg.JWT.AccessTLL,
+		issuer:    cfg.JWT.Issuer,
+		cfg:       cfg,
 	}
 }
 
@@ -43,5 +49,11 @@ func (j *JWTManager) GenerateToken(userID string, email string) (string, error) 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(j.secret)
+	tokenString, err := token.SignedString(j.secret)
+	if err != nil {
+		logger.Logger.Error("failed to sign JWT-token: %v", err)
+		return "", fmt.Errorf("failed to sign JWT-token: %v", err)
+	}
+
+	return tokenString, nil
 }

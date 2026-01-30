@@ -3,14 +3,16 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"titan/common/logger"
 	"titan/internal/auth-service/config"
 	"titan/internal/auth-service/jwt"
 	"titan/internal/auth-service/model"
 	"titan/internal/auth-service/storage"
-	"titan/pkg/logger"
 
+	jwt2 "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -80,4 +82,24 @@ func (a *authService) GetUser(ctx context.Context, username model.LoginRequest) 
 	}
 
 	return accessToken, nil
+}
+
+func (a *authService) Validate(token string) error {
+	t, err := jwt2.ParseWithClaims(token, &jwt2.MapClaims{}, func(token *jwt2.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt2.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(a.cfg.JWT.Secret), nil
+	})
+
+	if err != nil {
+		logger.Logger.Warn("invalid token attempt", err)
+		return err
+	}
+
+	if t == nil || !t.Valid {
+		return errors.New("token validation failed")
+	}
+
+	return nil
 }

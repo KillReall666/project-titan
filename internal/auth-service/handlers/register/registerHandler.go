@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"titan/common/utils/validation"
 	"titan/internal/auth-service/model"
 
 	"github.com/gin-gonic/gin"
@@ -24,17 +25,28 @@ func NewRegistrationHandler(register registrator) *registrationHandler {
 // RegistrationHandler - POST /sign up
 func (r *registrationHandler) RegistrationHandler(c *gin.Context) {
 	var req model.RegisterRequest
-	//TODO: можно еще добавить валидации на емейл так как стандартная по полям JSON-ки работает так себе.
+
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := r.registrator.SetUser(c.Request.Context(), req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	//Можно будет в дальнейшем делать вайт-листы на домены или сами адреса.
+	valid, err := validation.IsValidEmail(req.UserMail, false)
+	if !valid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User successfully registered"})
+	err = r.registrator.SetUser(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "User successfully registered",
+		"email":   req.UserMail},
+	)
 
 }

@@ -1,4 +1,4 @@
-package common
+package service
 
 import (
 	"context"
@@ -6,8 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"titan/pkg/logger"
+	"titan/common/logger"
 )
 
 func GracefulShutdown(ctx context.Context, srv *http.Server) {

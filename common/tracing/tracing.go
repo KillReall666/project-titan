@@ -1,16 +1,15 @@
-package common
+package tracing
 
 import (
 	"context"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/zipkin"   // Zipkin exporter
+	sdktrace "go.opentelemetry.io/otel/sdk/trace" // Для NewTracerProvider
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	"titan/pkg/logger"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/zipkin"   // Zipkin exporter
-	sdktrace "go.opentelemetry.io/otel/sdk/trace" // Для NewTracerProvider
+	"titan/common/logger"
 )
 
 func InitTracing() error {

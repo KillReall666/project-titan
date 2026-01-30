@@ -2,19 +2,18 @@ package main
 
 import (
 	"context"
-	"titan/internal/auth-service/handlers/login"
-
 	"net/http"
 	"time"
+	"titan/internal/auth-service/handlers/validate"
 
-	jwtM "titan/internal/auth-service/jwt"
-
+	"titan/common/logger"
+	utils "titan/common/utils/service"
 	"titan/internal/auth-service/config"
+	"titan/internal/auth-service/handlers/login"
 	"titan/internal/auth-service/handlers/register"
+	jwtM "titan/internal/auth-service/jwt"
 	"titan/internal/auth-service/service"
 	"titan/internal/auth-service/storage"
-	"titan/pkg/common"
-	"titan/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,7 +34,7 @@ func main() {
 	}
 
 	//Инициализация сервиса JWT
-	jwt := jwtM.NewJWTManager(cfg.JWT.Secret, cfg.JWT.AccessTLL, cfg.JWT.RefreshTLL, cfg.JWT.Issuer)
+	jwt := jwtM.NewJWTManager(cfg)
 
 	//Инициализация сервиса
 	serv := service.NewAuthService(*cfg, db, *jwt)
@@ -45,6 +44,7 @@ func main() {
 
 	r.POST("/registration", register.NewRegistrationHandler(serv).RegistrationHandler)
 	r.POST("login", login.NewLoginHandler(serv).LoginHandler)
+	r.POST("/validate", validate.NewValidationHandler(serv).ValidateHandler)
 
 	srv := &http.Server{
 		Handler:      r,
@@ -53,7 +53,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	go common.GracefulShutdown(ctx, srv)
+	go utils.GracefulShutdown(ctx, srv)
 
 	logger.Logger.Info("Auth service starting on localhost, port 1489")
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

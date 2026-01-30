@@ -20,7 +20,7 @@ type Database struct {
 const createPublicationTableQuery = `
       CREATE TABLE IF NOT EXISTS users (
 	id UUID PRIMARY KEY,
-    email VARCHAR NOT NULL,
+    email VARCHAR NOT NULL UNIQUE,
     pass_hash VARCHAR NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );`
