@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"titan/common/logger"
+	"titan/internal/observability/logger"
 )
 
 func GracefulShutdown(ctx context.Context, srv *http.Server) {

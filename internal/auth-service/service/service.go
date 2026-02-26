@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"titan/internal/observability/logger"
 
-	"titan/common/logger"
 	"titan/internal/auth-service/config"
 	"titan/internal/auth-service/jwt"
 	"titan/internal/auth-service/model"

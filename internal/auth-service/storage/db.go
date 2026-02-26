@@ -2,8 +2,9 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
-
+	"github.com/jackc/pgx/v5/pgconn"
 	"titan/internal/auth-service/model"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,6 +46,12 @@ func (d *Database) SetUser(ctx context.Context, user model.User) error {
 
 	_, err := d.db.Exec(ctx, createQuery, user.ID, user.Email, user.PasswordHash, user.CreatedAt)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				return errors.New("user already exists")
+			}
+		}
 		return err
 	}
 

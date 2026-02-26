@@ -33,5 +33,25 @@ services:
       timeout: 3s
       retries: 10
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    ports:
+      - "16686:16686"   # UI
+      - "4317:4317"     # OTLP gRPC (Jaeger принимает)
+      - "4318:4318"     # OTLP HTTP (на всякий)
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  otel-collector:
+      image: otel/opentelemetry-collector-contrib:0.96.0
+      command: [ "--config=/etc/otelcol/config.yaml" ]
+      volumes:
+        - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+      ports:
+        - "4319:4317"  # (не обязательно) если хочешь выделить collector наружу
+        - "4320:4318"
+      depends_on:
+        - jaeger
+
 volumes:
   pgdata:

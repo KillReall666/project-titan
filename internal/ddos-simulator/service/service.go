@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/google/uuid"
 	"io"
 	"math/rand"
 	"net/http"
@@ -15,19 +14,11 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"titan/common/logger"
-	"titan/internal/ddos-simulator/config"
-)
+	"titan/internal/observability/logger"
 
-var (
-	n        = flag.Int("n", 10000, "общее количество запросов")
-	c        = flag.Int("c", 200, "количество параллельных горутин (concurrency)")
-	url      = flag.String("url", "http://localhost:8080/packet", "URL эндпоинта Gateway")
-	authURL  = flag.String("auth", "http://localhost:8083/login", "URL для получения токена (/login)")
-	username = flag.String("u", "admin", "имя пользователя для логина")
-	password = flag.String("p", "supersecret123", "пароль для логина")
-	timeout  = flag.Duration("timeout", 5*time.Second, "таймаут на каждый запрос")
-	verbose  = flag.Bool("v", false, "выводить ошибки каждого запроса")
+	"github.com/google/uuid"
+
+	"titan/internal/ddos-simulator/config"
 )
 
 type DdosSimulatorService struct {
@@ -41,23 +32,28 @@ func New(cfg *config.Config) *DdosSimulatorService {
 }
 
 func (s *DdosSimulatorService) Setup() error {
+	//ожидаем инициализации остальных сервисов
+	flag.Parse()
+
 	token, err := s.Login()
 	if err != nil {
 		return err //todo: подумать что тут
 	}
+
+	logger.Logger.Info("login success, ready to attack...")
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	var wg sync.WaitGroup
 
-	sem := make(chan struct{}, *c)
+	sem := make(chan struct{}, s.cfg.GoroutinesCount)
 	success := 0
 	failed := 0
 	mu := sync.Mutex{}
 	startTime := time.Now()
 loop:
-	for i := 0; i < *n; i++ {
+	for i := 0; i < s.cfg.RequestCount; i++ {
 		select {
 		case <-stop:
 			logger.Logger.Warn("Receive a stop signal, finishing...")
@@ -76,7 +72,7 @@ loop:
 				mu.Lock()
 				failed++
 				mu.Unlock()
-				if *verbose {
+				if s.cfg.Verbose {
 					logger.Logger.Info("[req %d] error; %v", reqID, err)
 				}
 			} else {
@@ -101,22 +97,23 @@ loop:
 	fmt.Printf("Время:       %v\n", duration.Round(time.Millisecond))
 	fmt.Printf("RPS:         %.2f\n", rps)
 	if success > 0 {
-		fmt.Printf("Средний RPS на горутину: %.2f\n", rps/float64(*c))
+		fmt.Printf("Средний RPS на горутину: %.2f\n", rps/float64(s.cfg.GoroutinesCount))
 	}
 
+	return nil
 }
 
 func (s *DdosSimulatorService) Login() (string, error) {
 	payload := map[string]string{
-		"username": *username,
-		"password": *password,
+		"user_mail": s.cfg.Username,
+		"password":  s.cfg.Password,
 	}
 	body, _ := json.Marshal(payload)
 
-	req, _ := http.NewRequest("POST", *authURL, bytes.NewReader(body))
+	req, _ := http.NewRequest("POST", s.cfg.AuthURL, bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: *timeout}
+	client := &http.Client{Timeout: s.cfg.Timeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("запрос на /login: %w", err)
@@ -131,6 +128,7 @@ func (s *DdosSimulatorService) Login() (string, error) {
 	var result struct {
 		Token string `json:"token"`
 	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", fmt.Errorf("не удалось распарсить ответ /login: %w", err)
 	}
@@ -142,7 +140,7 @@ func (s *DdosSimulatorService) Login() (string, error) {
 	return result.Token, nil
 }
 
-func (s *DdosSimulatorService) Attack() error {
+func (s *DdosSimulatorService) Attack(token string) error {
 	packet := map[string]interface{}{
 		"packet_id": uuid.New().String(),
 		"data":      fmt.Sprintf("test-packet-%d", rand.Intn(999999)),
@@ -152,11 +150,11 @@ func (s *DdosSimulatorService) Attack() error {
 
 	body, _ := json.Marshal(packet)
 
-	req, _ := http.NewRequest("POST", *url, bytes.NewReader(body))
+	req, _ := http.NewRequest("POST", s.cfg.URL, bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{Timeout: *timeout}
+	client := &http.Client{Timeout: s.cfg.Timeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

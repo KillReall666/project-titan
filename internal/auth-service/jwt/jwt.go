@@ -3,8 +3,8 @@ package jwt
 import (
 	"fmt"
 	"time"
+	"titan/internal/observability/logger"
 
-	"titan/common/logger"
 	"titan/internal/auth-service/config"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,8 +24,7 @@ type JWTManager struct {
 	cfg        *config.Config
 }
 
-func New(
-	cfg *config.Config) *JWTManager {
+func New(cfg *config.Config) *JWTManager {
 	return &JWTManager{
 		secret:    []byte(cfg.JWT.Secret),
 		accessTTL: cfg.JWT.AccessTLL,

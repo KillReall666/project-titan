@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/http"
 	"time"
-	"titan/internal/auth-service/handlers/validate"
+	"titan/internal/observability/logger"
 
-	"titan/common/logger"
 	utils "titan/common/utils/service"
 	"titan/internal/auth-service/config"
 	"titan/internal/auth-service/handlers/login"
 	"titan/internal/auth-service/handlers/register"
+	"titan/internal/auth-service/handlers/validate"
 	jwtM "titan/internal/auth-service/jwt"
 	"titan/internal/auth-service/service"
 	"titan/internal/auth-service/storage"
@@ -43,7 +43,7 @@ func main() {
 	r.Use(gin.Recovery())
 
 	r.POST("/registration", register.NewRegistrationHandler(serv).RegistrationHandler)
-	r.POST("login", login.NewLoginHandler(serv).LoginHandler)
+	r.POST("/login", login.NewLoginHandler(serv).LoginHandler)
 	r.POST("/validate", validate.NewValidationHandler(serv).ValidateHandler)
 
 	srv := &http.Server{

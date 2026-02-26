@@ -115,3 +115,6 @@ Logging: slog JSON в stdout (уровни info/error, trace_id).
 
 Убить контейнер и volume БД: docker compose down -v
 Собрать контейнер:  docker compose up --build
+
+Запуск ddos-simulator: go run ./cmd/ddos-simulator
+Запуск api-gateway: go run ./cmd/api-gateway (если не запускюатся порты: lsof -i :8081, после kill -9 PID)
